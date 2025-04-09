@@ -40,6 +40,10 @@ func actionRegisterResource(ctx *cli.Context) error {
 	return nil
 }
 
+func actionResources(ctx *cli.Context) error {
+	return nil
+}
+
 // actionInit create a config.json file if the file does not exist
 // else it would do nothing
 func actionInit(ctx *cli.Context) error {
