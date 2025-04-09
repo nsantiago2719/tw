@@ -9,9 +9,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type Resource struct {
-	Name string `json:name`
-	Path string `json:path`
+type resource struct {
+	name string `json:"name"`
+	path string `json:"path"`
 }
 
 // makeAction is a wrapper for injecting generic code for all actions
@@ -27,7 +27,17 @@ func makeAction(f cli.ActionFunc) cli.ActionFunc {
 }
 
 func actionRegisterResource(ctx *cli.Context) error {
-	return os.ErrNotExist
+	resource := resource{}
+	if ctx.String("name") == "" {
+		return errors.New("Name must not be empty")
+	}
+
+	if ctx.String("path") == "" {
+		return errors.New("Path must not be empty")
+	}
+	resource.name = ctx.String("name")
+	resource.path = ctx.String("path")
+	return nil
 }
 
 // actionInit create a config.json file if the file does not exist

@@ -20,12 +20,12 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "name",
-				Value: "<resoure-name>",
+				Value: "resoure-name",
 				Usage: "the name of the resource to be added",
 			},
 			&cli.StringFlag{
 				Name:  "path",
-				Value: "<resource-path>",
+				Value: "resource-path",
 				Usage: "directory path of the resource",
 			},
 		},

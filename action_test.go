@@ -35,7 +35,7 @@ func TestActionRegisterResource(t *testing.T) {
 	// always remove the config.json
 	defer os.Remove("config.json")
 
-	err := cli_app.run([]string{"tw", "r", "--name", "resource-test", "--path", "./resource-test"})
+	err := cli_app.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	if err != nil {
 		t.Errorf("Test actionRegisterResource failed: %v", err)
 	}
