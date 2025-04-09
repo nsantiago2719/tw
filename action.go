@@ -2,6 +2,7 @@ package main
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/urfave/cli/v2"
 )
@@ -17,5 +18,9 @@ func makeAction(f cli.ActionFunc) cli.ActionFunc {
 }
 
 func actionInit(ctx *cli.Context) error {
+	err := os.WriteFile("config.json", []byte(""), 0755)
+	if err != nil {
+		return err
+	}
 	return nil
 }
