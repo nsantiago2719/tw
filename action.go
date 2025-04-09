@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -38,6 +39,6 @@ func actionInit(ctx *cli.Context) error {
 			return err
 		}
 	}
-
+	fmt.Println("tw initialized: created config.json file")
 	return nil
 }
