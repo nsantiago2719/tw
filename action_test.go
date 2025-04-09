@@ -6,26 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
 )
 
-func TestActionInit(t *testing.T) {
-	t.Parallel()
-	app := &cli.App{
-		Name:  "tw",
-		Usage: "tw [commands]",
-		Commands: []*cli.Command{
-			{
-				Name:    "init",
-				Aliases: []string{"i"},
-				Usage:   "initializes the current working diretory as the parent directory",
-				Action:  makeAction(actionInit),
-			},
-		},
-	}
+var cli_app = newApp()
 
+func TestActionInit(t *testing.T) {
+	cli_app.addCommand(&initCommand)
 	// Run init(i) command to create the config file
-	err := app.Run([]string{"tw", "i"})
+	err := cli_app.run([]string{"tw", "i"})
 	if err != nil {
 		t.Fatalf("Test actionInit failed: %v", err)
 	}
@@ -36,5 +24,19 @@ func TestActionInit(t *testing.T) {
 	// Check if the config file exist
 	if _, err := os.Stat("config.json"); errors.Is(err, os.ErrNotExist) {
 		assert.Nil(t, err.Error())
+	}
+}
+
+func TestActionRegisterResource(t *testing.T) {
+	cli_app.addCommand(&registerResource)
+	// Create the config.json file
+	cli_app.run([]string{"tw", "i"})
+
+	// always remove the config.json
+	defer os.Remove("config.json")
+
+	err := cli_app.run([]string{"tw", "r", "--name", "resource-test", "--path", "./resource-test"})
+	if err != nil {
+		t.Errorf("Test actionRegisterResource failed: %v", err)
 	}
 }
