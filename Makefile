@@ -9,6 +9,9 @@ COVERAGE_MODE = count
 build:
 	@go build -o bin/tw
 
+test:
+	go test
+
 run: build
 	./bin/tw
 
