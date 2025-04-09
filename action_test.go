@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 )
 
@@ -34,6 +35,6 @@ func TestActionInit(t *testing.T) {
 
 	// Check if the config file exist
 	if _, err := os.Stat("config.json"); errors.Is(err, os.ErrNotExist) {
-		t.Errorf("Expected: nil, Got: %q", err)
+		assert.Nil(t, err.Error())
 	}
 }
