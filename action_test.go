@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"testing"
@@ -36,6 +37,23 @@ func TestActionRegisterResource(t *testing.T) {
 	defer os.Remove("config.json")
 
 	err := cli_app.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
+	if err != nil {
+		t.Errorf("Test actionRegisterResource failed: %v", err)
+	}
+
+	resources := []resource{}
+	config, err := os.ReadFile("config.json")
+	if err != nil {
+		t.Errorf("Test actionRegisterResource failed: %v", err)
+	}
+	err = json.Unmarshal(config, &resources)
+	if err != nil {
+		t.Errorf("Test actionRegisterResource failed: %v", err)
+	}
+
+	assert.Equal(t, 1, len(resources), "config.json should contain 1 resource")
+
+	err = cli_app.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	if err != nil {
 		t.Errorf("Test actionRegisterResource failed: %v", err)
 	}
