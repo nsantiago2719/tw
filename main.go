@@ -8,5 +8,6 @@ func main() {
 	app := newApp()
 	app.addCommand(&initCommand)
 	app.addCommand(&registerResource)
+	app.addCommand(&resources)
 	app.run(os.Args)
 }

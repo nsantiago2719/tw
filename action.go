@@ -84,6 +84,13 @@ func actionRegisterResource(ctx *cli.Context) error {
 }
 
 func actionResources(ctx *cli.Context) error {
+	config, err := os.ReadFile("config.json")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(config))
+
 	return nil
 }
 

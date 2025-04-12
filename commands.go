@@ -32,8 +32,8 @@ var (
 	}
 
 	resources = cli.Command{
-		Name:    "resources",
-		Aliases: []string{"rs"},
+		Name:    "list-resources",
+		Aliases: []string{"lr"},
 		Usage:   "list all resources",
 		Action:  makeAction(actionResources),
 	}
