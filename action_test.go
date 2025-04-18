@@ -82,6 +82,9 @@ func TestActionResources(t *testing.T) {
 
 	assert.NoError(t, err)
 
+	err = cli_app.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test", "--var-files", "./data/resource-a/values.tfvars", "--var-files", "./data/resource-a/values-b.tfvars"})
+	assert.NoError(t, err)
+
 	err = cli_app.run([]string{"tw", "lr"})
 	assert.Nil(t, err)
 }

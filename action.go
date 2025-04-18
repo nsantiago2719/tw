@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/fatih/color"
+	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 )
 
@@ -88,12 +90,24 @@ func actionRegisterResource(ctx *cli.Context) error {
 
 func actionResources(ctx *cli.Context) error {
 	config, err := os.ReadFile("config.json")
+	resources := []resource{}
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(string(config))
+	err = json.Unmarshal(config, &resources)
 
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "Path", "Var Files")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+
+	for _, resource := range resources {
+		tbl.AddRow(resource.Name, resource.Path, resource.VarFiles)
+	}
+
+	tbl.Print()
 	return nil
 }
 
