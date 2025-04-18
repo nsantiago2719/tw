@@ -88,3 +88,8 @@ func TestActionResources(t *testing.T) {
 	err = cli_app.run([]string{"tw", "lr"})
 	assert.Nil(t, err)
 }
+
+func TestActionRunTerraform(t *testing.T) {
+	err := ""
+	assert.Nil(t, err)
+}

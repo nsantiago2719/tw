@@ -41,4 +41,10 @@ var (
 		Usage:   "list all resources",
 		Action:  makeAction(actionResources),
 	}
+
+	run = cli.Command{
+		Name:   "run",
+		Usage:  "runs terraform against the resource values",
+		Action: makeAction(actionRunTerraform),
+	}
 )

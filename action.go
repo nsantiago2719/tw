@@ -123,3 +123,7 @@ func actionInit(ctx *cli.Context) error {
 	fmt.Println("tw initialized: created config.json file")
 	return nil
 }
+
+func actionRunTerraform(ctx *cli.Context) error {
+	return nil
+}
