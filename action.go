@@ -20,9 +20,9 @@ type resource struct {
 
 // makeAction is a wrapper for injecting generic code for all actions
 // eg. logging
-func makeAction(f cli.ActionFunc) cli.ActionFunc {
+func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-		if err := f(ctx); err != nil {
+		if err := f(ctx, cfg); err != nil {
 			slog.Error("level=error", "msg", err)
 			return err
 		}
@@ -30,7 +30,11 @@ func makeAction(f cli.ActionFunc) cli.ActionFunc {
 	}
 }
 
-func actionRegisterResource(ctx *cli.Context) error {
+func actionRunTerraform(ctx *cli.Context, _ string) error {
+	return nil
+}
+
+func actionRegisterResource(ctx *cli.Context, cfg string) error {
 	if ctx.String("name") == "" {
 		return errors.New("Name must not be empty")
 	}
@@ -45,7 +49,7 @@ func actionRegisterResource(ctx *cli.Context) error {
 		VarFiles: ctx.StringSlice("var-files"),
 	}
 
-	file, err := os.OpenFile("config.json", os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(cfg, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return nil
 	}
@@ -54,7 +58,7 @@ func actionRegisterResource(ctx *cli.Context) error {
 
 	resources := []resource{}
 
-	config, err := os.ReadFile("config.json")
+	config, err := os.ReadFile(cfg)
 	if err != nil {
 		return err
 	}
@@ -88,8 +92,8 @@ func actionRegisterResource(ctx *cli.Context) error {
 	return nil
 }
 
-func actionResources(ctx *cli.Context) error {
-	config, err := os.ReadFile("config.json")
+func actionResources(ctx *cli.Context, cfg string) error {
+	config, err := os.ReadFile(cfg)
 	resources := []resource{}
 	if err != nil {
 		return err
@@ -113,17 +117,13 @@ func actionResources(ctx *cli.Context) error {
 
 // actionInit create a config.json file if the file does not exist
 // else it would do nothing
-func actionInit(ctx *cli.Context) error {
-	if _, err := os.Stat("config.json"); errors.Is(err, os.ErrNotExist) {
-		err := os.WriteFile("config.json", []byte("[]"), 0755)
+func actionInit(ctx *cli.Context, cfg string) error {
+	if _, err := os.Stat(cfg); errors.Is(err, os.ErrNotExist) {
+		err := os.WriteFile(cfg, []byte("[]"), 0755)
 		if err != nil {
 			return err
 		}
 	}
 	fmt.Println("tw initialized: created config.json file")
-	return nil
-}
-
-func actionRunTerraform(ctx *cli.Context) error {
 	return nil
 }

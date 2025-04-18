@@ -12,9 +12,9 @@ import (
 var cli_app = newApp()
 
 func init() {
-	cli_app.addCommand(&initCommand)
-	cli_app.addCommand(&registerResource)
-	cli_app.addCommand(&resources)
+	cli_app.addCommand(initCommand)
+	cli_app.addCommand(registerResource)
+	cli_app.addCommand(resources)
 }
 
 func TestActionInit(t *testing.T) {

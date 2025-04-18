@@ -5,18 +5,18 @@ import (
 )
 
 var (
-	initCommand = cli.Command{
+	initCommand = command{
 		Name:    "init",
 		Aliases: []string{"i"},
 		Usage:   "initializes the current working directory as the parent directory",
-		Action:  makeAction(actionInit),
+		Action:  actionInit,
 	}
 
-	registerResource = cli.Command{
+	registerResource = command{
 		Name:    "register",
 		Aliases: []string{"r"},
 		Usage:   "registers a resource to the config file",
-		Action:  makeAction(actionRegisterResource),
+		Action:  actionRegisterResource,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "name",
@@ -35,16 +35,16 @@ var (
 		},
 	}
 
-	resources = cli.Command{
+	resources = command{
 		Name:    "list-resources",
 		Aliases: []string{"lr"},
 		Usage:   "list all resources",
-		Action:  makeAction(actionResources),
+		Action:  actionResources,
 	}
 
-	run = cli.Command{
+	run = command{
 		Name:   "run",
 		Usage:  "runs terraform against the resource values",
-		Action: makeAction(actionRunTerraform),
+		Action: actionRunTerraform,
 	}
 )
