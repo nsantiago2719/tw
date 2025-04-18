@@ -57,12 +57,12 @@ func (app *app) makeCommand(cmd command) cli.Command {
 	}
 }
 
-func (app *app) run(a []string) error {
-	cli_app := &cli.App{
+func (app *app) run(args []string) error {
+	cliApp := &cli.App{
 		Name:     app.name,
 		Usage:    app.usage,
 		Commands: app.commands,
 	}
 
-	return cli_app.Run(a)
+	return cliApp.Run(args)
 }
