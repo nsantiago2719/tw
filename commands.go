@@ -28,6 +28,10 @@ var (
 				Value: "resource-path",
 				Usage: "directory path of the resource",
 			},
+			&cli.StringSliceFlag{
+				Name:  "var-files",
+				Usage: "var file path for the resource if needed",
+			},
 		},
 	}
 

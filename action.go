@@ -11,8 +11,9 @@ import (
 )
 
 type resource struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
+	Name     string   `json:"name"`
+	Path     string   `json:"path"`
+	VarFiles []string `json:"var-files"`
 }
 
 // makeAction is a wrapper for injecting generic code for all actions
@@ -35,9 +36,11 @@ func actionRegisterResource(ctx *cli.Context) error {
 	if ctx.String("path") == "" {
 		return errors.New("Path must not be empty")
 	}
+
 	rs := resource{
-		Name: ctx.String("name"),
-		Path: ctx.String("path"),
+		Name:     ctx.String("name"),
+		Path:     ctx.String("path"),
+		VarFiles: ctx.StringSlice("var-files"),
 	}
 
 	file, err := os.OpenFile("config.json", os.O_RDWR|os.O_CREATE, 0644)
