@@ -14,11 +14,12 @@ type app struct {
 }
 
 type command struct {
-	Name    string
-	Aliases []string
-	Usage   string
-	Action  actionFunc
-	Flags   []cli.Flag
+	Name        string
+	Aliases     []string
+	Usage       string
+	Action      actionFunc
+	Flags       []cli.Flag
+	SubCommands []command
 }
 
 func newApp() app {
@@ -35,13 +36,24 @@ func (app *app) addCommand(cmd command) *app {
 	return app
 }
 
-func (app *app) makeCommand(command command) cli.Command {
+func (app *app) makeSubCommands(cmds []command) []*cli.Command {
+	subCommands := []*cli.Command{}
+	for _, cmd := range cmds {
+		makeSubCommand := app.makeCommand(cmd)
+		subCommands = append(subCommands, &makeSubCommand)
+	}
+
+	return subCommands
+}
+
+func (app *app) makeCommand(cmd command) cli.Command {
 	return cli.Command{
-		Name:    command.Name,
-		Aliases: command.Aliases,
-		Usage:   command.Usage,
-		Action:  makeAction(command.Action, app.configPath),
-		Flags:   command.Flags,
+		Name:        cmd.Name,
+		Aliases:     cmd.Aliases,
+		Usage:       cmd.Usage,
+		Action:      makeAction(cmd.Action, app.configPath),
+		Flags:       cmd.Flags,
+		Subcommands: app.makeSubCommands(cmd.SubCommands),
 	}
 }
 
