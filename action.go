@@ -22,7 +22,13 @@ type resource struct {
 // eg. logging
 func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-		if err := f(ctx, cfg); err != nil {
+		cfgPath := ""
+		if ctx.String("config") == "" {
+			cfgPath = cfg
+		} else {
+			cfgPath = ctx.String("config")
+		}
+		if err := f(ctx, cfgPath); err != nil {
 			slog.Error("level=error", "msg", err)
 			return err
 		}
@@ -30,7 +36,7 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	}
 }
 
-func actionRunTerraform(ctx *cli.Context, _ string) error {
+func actionRunTerraform(ctx *cli.Context, cfg string) error {
 	return nil
 }
 

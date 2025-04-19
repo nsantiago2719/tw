@@ -23,10 +23,10 @@ func TestActionInit(t *testing.T) {
 	assert.NoError(t, err)
 
 	// remove config json at the end of the test
-	defer os.Remove("config.json")
+	defer os.Remove(cliApp.configPath)
 
 	// Check if the config file exist
-	if _, err := os.Stat("config.json"); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(cliApp.configPath); errors.Is(err, os.ErrNotExist) {
 		assert.Nil(t, err.Error())
 	}
 }
@@ -36,7 +36,7 @@ func TestActionRegisterResource(t *testing.T) {
 	cliApp.run([]string{"tw", "i"})
 
 	// always remove the config.json
-	defer os.Remove("config.json")
+	defer os.Remove(cliApp.configPath)
 
 	err := cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	assert.NoError(t, err)
@@ -69,13 +69,13 @@ func TestActionResources(t *testing.T) {
 	mockResources = append(mockResources, mockResource)
 
 	// always remove the config.json
-	defer os.Remove("config.json")
+	defer os.Remove(cliApp.configPath)
 
 	err := cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	assert.NoError(t, err)
 
 	resources := []resource{}
-	config, err := os.ReadFile("config.json")
+	config, err := os.ReadFile(cliApp.configPath)
 	assert.NoError(t, err)
 
 	err = json.Unmarshal(config, &resources)

@@ -62,6 +62,14 @@ func (app *app) run(args []string) error {
 		Name:     app.name,
 		Usage:    app.usage,
 		Commands: app.commands,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "config",
+				Aliases:     []string{"c"},
+				Usage:       "Load config file from `FILE`",
+				DefaultText: "config.json",
+			},
+		},
 	}
 
 	return cliApp.Run(args)

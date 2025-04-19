@@ -20,17 +20,15 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "name",
-				Value: "resoure-name",
-				Usage: "the name of the resource to be added",
+				Usage: "`resource-name` for the resource being added. (required: true)",
 			},
 			&cli.StringFlag{
 				Name:  "path",
-				Value: "resource-path",
-				Usage: "directory path of the resource",
+				Usage: "`PATH` where the resource is located. (required: true)",
 			},
 			&cli.StringSliceFlag{
 				Name:  "var-files",
-				Usage: "var file path for the resource if needed",
+				Usage: "Load variable values from the given files.",
 			},
 		},
 	}
