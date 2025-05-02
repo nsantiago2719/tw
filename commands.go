@@ -42,7 +42,13 @@ var (
 
 	run = command{
 		Name:   "run",
-		Usage:  "runs terraform against the resource values",
+		Usage:  "runs terraform apply against the resource values",
 		Action: actionRunTerraform,
+	}
+
+	plan = command{
+		Name:   "plan",
+		Usage:  "run terraform plan against the resource values",
+		Action: actionPlanTerraform,
 	}
 )

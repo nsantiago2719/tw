@@ -10,5 +10,6 @@ func main() {
 	app.addCommand(registerResource)
 	app.addCommand(resources)
 	app.addCommand(run)
+	app.addCommand(plan)
 	app.run(os.Args)
 }

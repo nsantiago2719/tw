@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -36,8 +37,20 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	}
 }
 
+// TODO: run terraform apply along with the var files passed if exist
 func actionRunTerraform(ctx *cli.Context, cfg string) error {
 	return nil
+}
+
+func actionPlanTerraform(ctx *cli.Context, cfg string) error {
+	// TODO: fetch varfiles from config
+	// TODO: add dry run flag
+	varFiles := []string{"-var-file=./hello/path/var.tfvars", "-var-file=./hello/path/extend.tfvars"}
+	execCommand := createCmd("plan", varFiles, true)
+
+	context := context.Background()
+
+	return execCommand.execCmd(context)
 }
 
 func actionRegisterResource(ctx *cli.Context, cfg string) error {
