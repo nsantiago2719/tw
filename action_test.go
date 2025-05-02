@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -9,7 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var cliApp = newApp()
+var (
+	cliApp = newApp()
+	ctx    = context.Background()
+)
 
 func init() {
 	cliApp.addCommand(initCommand)
@@ -19,7 +23,7 @@ func init() {
 
 func TestActionInit(t *testing.T) {
 	// Run init(i) command to create the config file
-	err := cliApp.run([]string{"tw", "i"})
+	err := cliApp.run(ctx, []string{"tw", "i"})
 	assert.NoError(t, err)
 
 	// remove config json at the end of the test
@@ -33,12 +37,12 @@ func TestActionInit(t *testing.T) {
 
 func TestActionRegisterResource(t *testing.T) {
 	// Create the config.json file
-	cliApp.run([]string{"tw", "i"})
+	cliApp.run(ctx, []string{"tw", "i"})
 
 	// always remove the config.json
 	defer os.Remove(cliApp.configPath)
 
-	err := cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
+	err := cliApp.run(ctx, []string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	assert.NoError(t, err)
 
 	resources := []resource{}
@@ -49,16 +53,16 @@ func TestActionRegisterResource(t *testing.T) {
 
 	assert.Equal(t, 1, len(resources), "config.json should contain 1 resource")
 
-	err = cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
+	err = cliApp.run(ctx, []string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	assert.NoError(t, err)
 
-	err = cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test", "--var-files", "./data/resource-a/values.tfvars", "--var-files", "./data/resource-a/values-b.tfvars"})
+	err = cliApp.run(ctx, []string{"tw", "r", "--name", "resource-name", "--path", "./resource-test", "--var-files", "./data/resource-a/values.tfvars", "--var-files", "./data/resource-a/values-b.tfvars"})
 	assert.NoError(t, err)
 }
 
 func TestActionResources(t *testing.T) {
 	// Create the config.json file
-	cliApp.run([]string{"tw", "i"})
+	cliApp.run(ctx, []string{"tw", "i"})
 
 	mockResource := resource{
 		Name: "resource-name",
@@ -71,7 +75,7 @@ func TestActionResources(t *testing.T) {
 	// always remove the config.json
 	defer os.Remove(cliApp.configPath)
 
-	err := cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
+	err := cliApp.run(ctx, []string{"tw", "r", "--name", "resource-name", "--path", "./resource-test"})
 	assert.NoError(t, err)
 
 	resources := []resource{}
@@ -82,10 +86,10 @@ func TestActionResources(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	err = cliApp.run([]string{"tw", "r", "--name", "resource-name", "--path", "./resource-test", "--var-files", "./data/resource-a/values.tfvars", "--var-files", "./data/resource-a/values-b.tfvars"})
+	err = cliApp.run(ctx, []string{"tw", "r", "--name", "resource-name", "--path", "./resource-test", "--var-files", "./data/resource-a/values.tfvars", "--var-files", "./data/resource-a/values-b.tfvars"})
 	assert.NoError(t, err)
 
-	err = cliApp.run([]string{"tw", "lr"})
+	err = cliApp.run(ctx, []string{"tw", "lr"})
 	assert.Nil(t, err)
 }
 

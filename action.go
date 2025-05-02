@@ -10,7 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type resource struct {
@@ -22,14 +22,14 @@ type resource struct {
 // makeAction is a wrapper for injecting generic code for all actions
 // eg. logging
 func makeAction(f actionFunc, cfg string) cli.ActionFunc {
-	return func(ctx *cli.Context) error {
+	return func(ctx context.Context, cmd *cli.Command) error {
 		cfgPath := ""
-		if ctx.String("config") == "" {
+		if cmd.String("config") == "" {
 			cfgPath = cfg
 		} else {
-			cfgPath = ctx.String("config")
+			cfgPath = cmd.String("config")
 		}
-		if err := f(ctx, cfgPath); err != nil {
+		if err := f(ctx, cmd, cfgPath); err != nil {
 			slog.Error("level=error", "msg", err)
 			return err
 		}
@@ -38,11 +38,11 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 }
 
 // TODO: run terraform apply along with the var files passed if exist
-func actionRunTerraform(ctx *cli.Context, cfg string) error {
+func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
 	return nil
 }
 
-func actionPlanTerraform(ctx *cli.Context, cfg string) error {
+func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
 	// TODO: fetch varfiles from config
 	// TODO: add dry run flag
 	varFiles := []string{"-var-file=./hello/path/var.tfvars", "-var-file=./hello/path/extend.tfvars"}
@@ -53,19 +53,19 @@ func actionPlanTerraform(ctx *cli.Context, cfg string) error {
 	return execCommand.execCmd(context)
 }
 
-func actionRegisterResource(ctx *cli.Context, cfg string) error {
-	if ctx.String("name") == "" {
+func actionRegisterResource(ctx context.Context, cmd *cli.Command, cfg string) error {
+	if cmd.String("name") == "" {
 		return errors.New("Name must not be empty")
 	}
 
-	if ctx.String("path") == "" {
+	if cmd.String("path") == "" {
 		return errors.New("Path must not be empty")
 	}
 
 	rs := resource{
-		Name:     ctx.String("name"),
-		Path:     ctx.String("path"),
-		VarFiles: ctx.StringSlice("var-files"),
+		Name:     cmd.String("name"),
+		Path:     cmd.String("path"),
+		VarFiles: cmd.StringSlice("var-files"),
 	}
 
 	file, err := os.OpenFile(cfg, os.O_RDWR|os.O_CREATE, 0644)
@@ -111,7 +111,7 @@ func actionRegisterResource(ctx *cli.Context, cfg string) error {
 	return nil
 }
 
-func actionResources(ctx *cli.Context, cfg string) error {
+func actionResources(ctx context.Context, cmd *cli.Command, cfg string) error {
 	config, err := os.ReadFile(cfg)
 	resources := []resource{}
 	if err != nil {
@@ -136,7 +136,7 @@ func actionResources(ctx *cli.Context, cfg string) error {
 
 // actionInit create a config.json file if the file does not exist
 // else it would do nothing
-func actionInit(ctx *cli.Context, cfg string) error {
+func actionInit(ctx context.Context, cmd *cli.Command, cfg string) error {
 	if _, err := os.Stat(cfg); errors.Is(err, os.ErrNotExist) {
 		err := os.WriteFile(cfg, []byte("[]"), 0755)
 		if err != nil {

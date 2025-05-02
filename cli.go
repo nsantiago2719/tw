@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/urfave/cli/v2"
+	"context"
+
+	"github.com/urfave/cli/v3"
 )
 
-type actionFunc func(*cli.Context, string) error
+type actionFunc func(context.Context, *cli.Command, string) error
 
 type app struct {
 	name       string
@@ -48,17 +50,17 @@ func (app *app) makeSubCommands(cmds []command) []*cli.Command {
 
 func (app *app) makeCommand(cmd command) cli.Command {
 	return cli.Command{
-		Name:        cmd.Name,
-		Aliases:     cmd.Aliases,
-		Usage:       cmd.Usage,
-		Action:      makeAction(cmd.Action, app.configPath),
-		Flags:       cmd.Flags,
-		Subcommands: app.makeSubCommands(cmd.SubCommands),
+		Name:     cmd.Name,
+		Aliases:  cmd.Aliases,
+		Usage:    cmd.Usage,
+		Action:   makeAction(cmd.Action, app.configPath),
+		Flags:    cmd.Flags,
+		Commands: app.makeSubCommands(cmd.SubCommands),
 	}
 }
 
-func (app *app) run(args []string) error {
-	cliApp := &cli.App{
+func (app *app) run(ctx context.Context, args []string) error {
+	cliApp := &cli.Command{
 		Name:     app.name,
 		Usage:    app.usage,
 		Commands: app.commands,
@@ -72,5 +74,5 @@ func (app *app) run(args []string) error {
 		},
 	}
 
-	return cliApp.Run(args)
+	return cliApp.Run(ctx, args)
 }
