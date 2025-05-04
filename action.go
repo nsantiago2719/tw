@@ -23,7 +23,8 @@ type resource struct {
 // eg. logging
 func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	return func(ctx context.Context, cmd *cli.Command) error {
-		cfgPath := ""
+		// sets the to default cfg if config flag is not passed
+		var cfgPath string
 		if cmd.String("config") == "" {
 			cfgPath = cfg
 		} else {
@@ -37,20 +38,86 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	}
 }
 
+func getDetails(name string, resources []resource) (string, []string) {
+	var path string
+	var varFiles []string
+	for _, v := range resources {
+		if v.Name == name {
+			path = v.Path
+			varFiles = v.VarFiles
+			// Stop looking for the resource
+			// This will only allow us to get the first resource that
+			// matches the resource name passed.
+			break
+		}
+	}
+	return path, varFiles
+}
+
+func createArgs(cmd string, path string, varFiles []string) []string {
+	arg := []string{}
+	chDir := fmt.Sprintf("-chdir=%v", path)
+	arg = append(arg, chDir)
+	// Append cmd after chdir since -chdir should be declared first
+	arg = append(arg, cmd)
+	arg = append(arg, "-no-color")
+	if len(varFiles) > 0 {
+		for _, v := range varFiles {
+			text := fmt.Sprintf("-var-file=%v", v)
+			arg = append(arg, text)
+		}
+	}
+
+	return arg
+}
+
 // TODO: run terraform apply along with the var files passed if exist
 func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
 	return nil
 }
 
 func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
-	// TODO: fetch varfiles from config
-	// TODO: add dry run flag
-	varFiles := []string{"-var-file=./hello/path/var.tfvars", "-var-file=./hello/path/extend.tfvars"}
-	execCommand := createCmd("plan", varFiles, true)
+	resourceName := cmd.StringArg("resource-name")
 
-	context := context.Background()
+	if resourceName == "" {
+		return fmt.Errorf("resouce-name cannot be empty")
+	}
 
-	return execCommand.execCmd(context)
+	var resources []resource
+	config, err := os.ReadFile(cfg)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(config, &resources)
+	if err != nil {
+		return err
+	}
+
+	resourcePath, varFiles := getDetails(resourceName, resources)
+	if resourcePath == "" {
+		return fmt.Errorf("there is no resource registered with the name or the path is empty")
+	}
+
+	args := createArgs("plan", resourcePath, varFiles)
+	execCommand := createCmd("plan", args)
+
+	execCmd, err := execCommand.exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	for output := range execCmd {
+		var level string
+		if output.Stream == "stderr" {
+			level = fmt.Sprintf("level=%v", "ERROR")
+		} else {
+			level = fmt.Sprintf("level=%v", "INFO")
+		}
+		slog.Info(level, "msg", output.Msg)
+	}
+
+	return err
 }
 
 func actionRegisterResource(ctx context.Context, cmd *cli.Command, cfg string) error {
@@ -62,6 +129,7 @@ func actionRegisterResource(ctx context.Context, cmd *cli.Command, cfg string) e
 		return errors.New("Path must not be empty")
 	}
 
+	fmt.Println(cmd.StringSlice("var-files"))
 	rs := resource{
 		Name:     cmd.String("name"),
 		Path:     cmd.String("path"),

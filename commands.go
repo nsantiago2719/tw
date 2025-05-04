@@ -41,14 +41,26 @@ var (
 	}
 
 	run = command{
-		Name:   "run",
-		Usage:  "runs terraform apply against the resource values",
+		Name:  "run",
+		Usage: "runs terraform apply against the resource values",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "dry-run",
+				Usage: "sets the terraform dry-run flag",
+			},
+		},
 		Action: actionRunTerraform,
 	}
 
 	plan = command{
-		Name:   "plan",
-		Usage:  "run terraform plan against the resource values",
+		Name:  "plan",
+		Usage: "run terraform plan against the resource values",
+		Arguments: []cli.Argument{
+			&cli.StringArg{
+				Name:      "resource-name",
+				UsageText: "[resource-name]",
+			},
+		},
 		Action: actionPlanTerraform,
 	}
 )

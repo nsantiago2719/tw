@@ -35,6 +35,9 @@ func TestActionInit(t *testing.T) {
 	}
 }
 
+// TODO: TestActionPlanTerraform
+// TODO: TestActionRunTerraform
+
 func TestActionRegisterResource(t *testing.T) {
 	// Create the config.json file
 	cliApp.run(ctx, []string{"tw", "i"})
