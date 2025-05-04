@@ -63,7 +63,7 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 
 	resourcePath, varFiles := getDetails(resourceName, resources)
 	if resourcePath == "" {
-		return fmt.Errorf("there is no resource registered with the name or the path is empty")
+		return fmt.Errorf("the resource registered has an empty path")
 	}
 
 	if err := runInit(ctx, resourcePath); err != nil {
@@ -71,7 +71,10 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 	}
 
 	execPlan := initCmd("plan")
-	execPlan.createCmd(resourcePath, varFiles...)
+	err = execPlan.createCmd(resourcePath, varFiles...)
+	if err != nil {
+		return err
+	}
 
 	execPlanOutput, err := execPlan.exec(ctx)
 	if err != nil {
@@ -83,6 +86,7 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 	return err
 }
 
+// TODO: set path as the current path if path flag is `.`
 func actionRegisterResource(ctx context.Context, cmd *cli.Command, cfg string) error {
 	if cmd.String("name") == "" {
 		return errors.New("Name must not be empty")

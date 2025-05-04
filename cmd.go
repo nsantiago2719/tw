@@ -71,11 +71,13 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 	stdOutputChan := make(chan stdOutLine)
 	var wg sync.WaitGroup
 
+	// create readFromPipe func, gets the name and pipe
 	readFromPipe := func(pipeName string, pipe io.ReadCloser) {
 		defer wg.Done()
 		scanner := bufio.NewScanner(pipe)
 		for scanner.Scan() {
 			line := scanner.Text()
+			// do not send empty lines
 			if line != "" {
 				stdOutputChan <- stdOutLine{Stream: pipeName, Msg: line}
 			}
