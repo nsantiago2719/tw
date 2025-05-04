@@ -20,6 +20,7 @@ type command struct {
 	Aliases     []string
 	Usage       string
 	Action      actionFunc
+	Arguments   []cli.Argument
 	Flags       []cli.Flag
 	SubCommands []command
 }
@@ -50,12 +51,13 @@ func (app *app) makeSubCommands(cmds []command) []*cli.Command {
 
 func (app *app) makeCommand(cmd command) cli.Command {
 	return cli.Command{
-		Name:     cmd.Name,
-		Aliases:  cmd.Aliases,
-		Usage:    cmd.Usage,
-		Action:   makeAction(cmd.Action, app.configPath),
-		Flags:    cmd.Flags,
-		Commands: app.makeSubCommands(cmd.SubCommands),
+		Name:      cmd.Name,
+		Aliases:   cmd.Aliases,
+		Usage:     cmd.Usage,
+		Action:    makeAction(cmd.Action, app.configPath),
+		Flags:     cmd.Flags,
+		Arguments: cmd.Arguments,
+		Commands:  app.makeSubCommands(cmd.SubCommands),
 	}
 }
 
