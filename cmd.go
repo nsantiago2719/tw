@@ -23,11 +23,30 @@ type stdOutLine struct {
 	Msg    string
 }
 
-func createCmd(command string, args []string) cmd {
+func initCmd(command string) cmd {
 	return cmd{
 		Command: command,
-		Args:    args,
+		Args:    []string{},
 	}
+}
+
+func (cmd *cmd) createCmd(path string, varFiles ...string) error {
+	chDir := fmt.Sprintf("-chdir=%v", path)
+	// inject the chdir flag
+	cmd.addArg(chDir)
+	// inject the command eg. plan or apply
+	cmd.addArg(cmd.Command)
+	// inject no-color flag to remove ascii on the output
+	cmd.addArg("-no-color")
+	// inject var-files
+	if len(varFiles) > 0 {
+		for _, v := range varFiles {
+			arg := fmt.Sprintf("-var-file=%v", v)
+			cmd.addArg(arg)
+		}
+	}
+
+	return nil
 }
 
 func (cmd *cmd) addArg(arg string) *cmd {
@@ -36,8 +55,6 @@ func (cmd *cmd) addArg(arg string) *cmd {
 	return cmd
 }
 
-// TODO: run the said command using terraform
-// TODO: get the values from the config file
 func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 	cmdCtx := exec.CommandContext(ctx, "terraform", cmd.Args...)
 

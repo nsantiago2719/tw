@@ -7,8 +7,8 @@ import (
 )
 
 func runInit(ctx context.Context, resourcePath string) error {
-	argsInit := createArgs("init", resourcePath, []string{})
-	execInit := createCmd("init", argsInit)
+	execInit := initCmd("init")
+	execInit.createCmd(resourcePath)
 
 	execInitOutput, err := execInit.exec(ctx)
 	if err != nil {
@@ -32,6 +32,8 @@ func stdOutput(outLine <-chan stdOutLine) {
 	}
 }
 
+// Set a better way on getting the resouce details which allows to
+// having the same resource name
 func getDetails(name string, resources []resource) (string, []string) {
 	var path string
 	var varFiles []string
@@ -46,21 +48,4 @@ func getDetails(name string, resources []resource) (string, []string) {
 		}
 	}
 	return path, varFiles
-}
-
-func createArgs(cmd string, path string, varFiles []string) []string {
-	arg := []string{}
-	chDir := fmt.Sprintf("-chdir=%v", path)
-	arg = append(arg, chDir)
-	// Append cmd after chdir since -chdir should be declared first
-	arg = append(arg, cmd)
-	arg = append(arg, "-no-color")
-	if len(varFiles) > 0 {
-		for _, v := range varFiles {
-			text := fmt.Sprintf("-var-file=%v", v)
-			arg = append(arg, text)
-		}
-	}
-
-	return arg
 }

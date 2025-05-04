@@ -70,8 +70,8 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 		return err
 	}
 
-	argsPlan := createArgs("plan", resourcePath, varFiles)
-	execPlan := createCmd("plan", argsPlan)
+	execPlan := initCmd("plan")
+	execPlan.createCmd(resourcePath, varFiles...)
 
 	execPlanOutput, err := execPlan.exec(ctx)
 	if err != nil {
