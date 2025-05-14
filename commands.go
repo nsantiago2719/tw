@@ -43,10 +43,20 @@ var (
 	run = command{
 		Name:  "run",
 		Usage: "runs terraform apply against the resource values",
+		Arguments: []cli.Argument{
+			&cli.StringArg{
+				Name:      "resource-name",
+				UsageText: "[resource-name]",
+			},
+		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "dry-run",
 				Usage: "sets the terraform dry-run flag",
+			},
+			&cli.BoolFlag{
+				Name:  "auto-approve",
+				Usage: "sets terraform auto-accept flag",
 			},
 		},
 		Action: actionRunTerraform,

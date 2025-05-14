@@ -40,6 +40,51 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 
 // TODO: run terraform apply along with the var files passed if exist
 func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
+	resourceName := cmd.StringArg("resource-name")
+	if resourceName == "" {
+		return fmt.Errorf("resource-name cannot be empty")
+	}
+
+	var resources []resource
+	config, err := os.ReadFile(cfg)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(config, &resources)
+	if err != nil {
+		return err
+	}
+
+	resourcePath, args := getDetails(resourceName, resources)
+	if resourcePath == "" {
+		return fmt.Errorf("the resource registered has an empty path")
+	}
+
+	if err := runInit(ctx, resourcePath); err != nil {
+		return err
+	}
+
+	execApply := initCmd("apply")
+	err = execApply.createCmd(resourcePath, args...)
+	if err != nil {
+		return err
+	}
+
+	if cmd.Bool("auto-approve") {
+		execApply.addArg("-auto-approve")
+	}
+
+	if cmd.Bool("dry-run") {
+		execApply.addArg("-dry-run")
+	}
+
+	execApplyOutput, err := execApply.exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	stdOutput(execApplyOutput)
 	return nil
 }
 
