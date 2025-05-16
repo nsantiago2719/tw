@@ -132,7 +132,7 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 }
 
 // TODO: set path as the current path if path flag is `.`
-func actionRegisterResource(ctx context.Context, cmd *cli.Command, cfg string) error {
+func actionRegisterResource(_ context.Context, cmd *cli.Command, cfg string) error {
 	if cmd.String("name") == "" {
 		return errors.New("Name must not be empty")
 	}
@@ -191,7 +191,7 @@ func actionRegisterResource(ctx context.Context, cmd *cli.Command, cfg string) e
 	return nil
 }
 
-func actionResources(ctx context.Context, cmd *cli.Command, cfg string) error {
+func actionResources(_ context.Context, _ *cli.Command, cfg string) error {
 	config, err := os.ReadFile(cfg)
 	resources := []resource{}
 	if err != nil {
@@ -216,7 +216,7 @@ func actionResources(ctx context.Context, cmd *cli.Command, cfg string) error {
 
 // actionInit create a config.json file if the file does not exist
 // else it would do nothing
-func actionInit(ctx context.Context, cmd *cli.Command, cfg string) error {
+func actionInit(_ context.Context, _ *cli.Command, cfg string) error {
 	if _, err := os.Stat(cfg); errors.Is(err, os.ErrNotExist) {
 		err := os.WriteFile(cfg, []byte("[]"), 0755)
 		if err != nil {
