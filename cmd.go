@@ -75,9 +75,9 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 	}
 
 	stdOutputChan := make(chan stdOutLine)
-	stdinRequestChan := make(chan bool)    // Signal when input is likely needed
-	stdinInputChan := make(chan string)    // Channel to receive user input
-	
+	stdinRequestChan := make(chan bool) // Signal when input is likely needed
+	stdinInputChan := make(chan string) // Channel to receive user input
+
 	var wg sync.WaitGroup
 
 	// create readFromPipe func, gets the name and pipe
@@ -89,7 +89,7 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 			// do not send empty lines
 			if line != "" {
 				stdOutputChan <- stdOutLine{Stream: pipeName, Msg: line}
-				
+
 				// Check for common prompts that indicate the command is waiting for input
 				// This is a heuristic approach - adjust these patterns based on your specific use case
 				if containsInputPrompt(line) {
@@ -130,7 +130,6 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 		close(stdinRequestChan)
 		return nil, nil, nil, fmt.Errorf("failed to run command: %w", err)
 	}
-
 	go func() {
 		err = cmdCtx.Wait()
 		if err != nil {
@@ -150,12 +149,7 @@ func containsInputPrompt(line string) bool {
 	// Common patterns that might indicate a prompt for user input
 	// Adjust these patterns based on the specific commands you're running
 	inputPromptPatterns := []string{
-		"[y/N]", "[Y/n]", "[y/n]",  // Yes/No prompts
-		"Enter a value:", "Please enter", "Input:", 
-		"Password:", "Username:", "Login:",
-		"Do you want to", "Proceed?", "Continue?",
-		"(default -", "(default:", "[default:",
-		">", "$", "#", // Common shell prompts
+		"Do you want to perform these actions?",
 	}
 
 	for _, pattern := range inputPromptPatterns {
