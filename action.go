@@ -38,6 +38,45 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 	}
 }
 
+// printOutput is a local helper function to print command output with color formatting
+func printOutput(output <-chan stdOutLine) {
+	for line := range output {
+		if line.Stream == "stderr" {
+			fmt.Printf("\033[31m%s\033[0m\n", line.Msg)
+		} else {
+			fmt.Println(line.Msg)
+		}
+	}
+}
+
+// handleStdin manages user input when a command requires it
+func handleStdin(stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
+	for range stdinRequestChan {
+		// Command is waiting for input
+		fmt.Print("\033[33mInput required: \033[0m") // Yellow prompt
+
+		// Read user input
+		scanner := bufio.NewScanner(os.Stdin)
+		if scanner.Scan() {
+			userInput := scanner.Text()
+			// Send the input to the command
+			stdinInputChan <- userInput
+		} else {
+			// Handle scanner error
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", scanner.Err())
+			break
+		}
+	}
+}
+
+func handleCommandIO(output <-chan stdOutLine, stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
+	// Start a goroutine to handle stdin requests
+	go handleStdin(stdinRequestChan, stdinInputChan)
+
+	// Process output in the current goroutine
+	printOutput(output)
+}
+
 // TODO: run terraform apply along with the var files passed if exist
 func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
 	resourceName := cmd.StringArg("resource-name")
@@ -141,7 +180,6 @@ func actionRegisterResource(_ context.Context, cmd *cli.Command, cfg string) err
 		return errors.New("Path must not be empty")
 	}
 
-	fmt.Println(cmd.StringSlice("var-files"))
 	rs := resource{
 		Name:     cmd.String("name"),
 		Path:     cmd.String("path"),
@@ -166,6 +204,15 @@ func actionRegisterResource(_ context.Context, cmd *cli.Command, cfg string) err
 	if err != nil {
 		return nil
 	}
+
+	for resource := range resources {
+		nameIndex := resource + 1
+		baseName := cmd.String("name")
+		if resources[resource].Name == rs.Name {
+			rs.Name = fmt.Sprintf("%s-%d", baseName, nameIndex)
+		}
+	}
+
 	resources = append(resources, rs)
 
 	marshalResources, err := json.MarshalIndent(resources, "", "  ")
