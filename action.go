@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -36,6 +37,45 @@ func makeAction(f actionFunc, cfg string) cli.ActionFunc {
 		}
 		return nil
 	}
+}
+
+// printOutput is a local helper function to print command output with color formatting
+func printOutput(output <-chan stdOutLine) {
+	for line := range output {
+		if line.Stream == "stderr" {
+			fmt.Printf("\033[31m%s\033[0m\n", line.Msg)
+		} else {
+			fmt.Println(line.Msg)
+		}
+	}
+}
+
+// handleStdin manages user input when a command requires it
+func handleStdin(stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
+	for range stdinRequestChan {
+		// Command is waiting for input
+		fmt.Print("\033[33mInput required: \033[0m") // Yellow prompt
+		
+		// Read user input
+		scanner := bufio.NewScanner(os.Stdin)
+		if scanner.Scan() {
+			userInput := scanner.Text()
+			// Send the input to the command
+			stdinInputChan <- userInput
+		} else {
+			// Handle scanner error
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", scanner.Err())
+			break
+		}
+	}
+}
+
+func handleCommandIO(output <-chan stdOutLine, stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
+	// Start a goroutine to handle stdin requests
+	go handleStdin(stdinRequestChan, stdinInputChan)
+	
+	// Process output in the current goroutine
+	printOutput(output)
 }
 
 // TODO: run terraform apply along with the var files passed if exist
@@ -79,12 +119,17 @@ func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error
 		execApply.addArg("-dry-run")
 	}
 
-	execApplyOutput, err := execApply.exec(ctx)
+	// Get output channel and stdin channels from command execution
+	// The stdinRequestChan and stdinInputChan are used by handleCommandIO to manage interactive input
+	execApplyOutput, stdinRequestChan, stdinInputChan, err := execApply.exec(ctx)
 	if err != nil {
 		return err
 	}
 
-	stdOutput(execApplyOutput)
+	// Handle both output and potential input requests
+	// This function uses all three channels to manage command IO
+	handleCommandIO(execApplyOutput, stdinRequestChan, stdinInputChan)
+
 	return nil
 }
 
@@ -121,14 +166,18 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 		return err
 	}
 
-	execPlanOutput, err := execPlan.exec(ctx)
+	// Get output channel and stdin channels from command execution
+	// The stdinRequestChan and stdinInputChan are used by handleCommandIO to manage interactive input
+	execPlanOutput, stdinRequestChan, stdinInputChan, err := execPlan.exec(ctx)
 	if err != nil {
 		return err
 	}
 
-	stdOutput(execPlanOutput)
+	// Handle both output and potential input requests
+	// This function uses all three channels to manage command IO
+	handleCommandIO(execPlanOutput, stdinRequestChan, stdinInputChan)
 
-	return err
+	return nil
 }
 
 // TODO: set path as the current path if path flag is `.`
