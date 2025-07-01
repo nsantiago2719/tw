@@ -4,4 +4,5 @@ bin/*
 .terraform
 .terraform.lock.hcl
 *.tfstate
+*.backup
 data/**/*.txt
