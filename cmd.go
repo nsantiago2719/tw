@@ -69,6 +69,9 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 	}
 
 	stdOutputChan := make(chan stdOutLine)
+	stdinRequestChan := make(chan bool) // Signal when input is likely needed
+	stdinInputChan := make(chan string) // Channel to receive user input
+
 	var wg sync.WaitGroup
 
 	// create readFromPipe func, gets the name and pipe
@@ -80,6 +83,17 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 			// do not send empty lines
 			if line != "" {
 				stdOutputChan <- stdOutLine{Stream: pipeName, Msg: line}
+
+				// Check for common prompts that indicate the command is waiting for input
+				// This is a heuristic approach - adjust these patterns based on your specific use case
+				if containsInputPrompt(line) {
+					select {
+					case stdinRequestChan <- true:
+						// Signal that input is needed
+					default:
+						// Channel is full or closed, do nothing
+					}
+				}
 			}
 		}
 		if err := scanner.Err(); err != nil {
@@ -98,7 +112,6 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 		close(stdOutputChan)
 		return nil, fmt.Errorf("failed to run command: %w", err)
 	}
-
 	go func() {
 		err = cmdCtx.Wait()
 		if err != nil {
@@ -108,5 +121,28 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 		defer close(stdOutputChan)
 	}()
 
-	return stdOutputChan, nil
+	return stdOutputChan, stdinRequestChan, stdinInputChan, nil
+}
+
+// containsInputPrompt checks if a line contains common patterns that indicate
+// the command is waiting for user input
+func containsInputPrompt(line string) bool {
+	// Common patterns that might indicate a prompt for user input
+	// Adjust these patterns based on the specific commands you're running
+	inputPromptPatterns := []string{
+		"Do you want to perform these actions?",
+	}
+
+	for _, pattern := range inputPromptPatterns {
+		if contains(line, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+// contains checks if a string contains a substring (case-insensitive)
+func contains(s, substr string) bool {
+	s, substr = strings.ToLower(s), strings.ToLower(substr)
+	return strings.Contains(s, substr)
 }
