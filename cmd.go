@@ -86,8 +86,15 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 		scanner := bufio.NewScanner(pipe)
 		for scanner.Scan() {
 			line := scanner.Text()
+
+			// Remove specific prompt as a workaround
+			// since it is displayed after the input
+			if contains(line, "Enter a value:") {
+				line = ""
+			}
 			// do not send empty lines
 			if line != "" {
+
 				stdOutputChan <- stdOutLine{Stream: pipeName, Msg: line}
 
 				// Check for common prompts that indicate the command is waiting for input
@@ -107,10 +114,8 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 		}
 	}
 
-	wg.Add(1)
+	wg.Add(2)
 	go readFromPipe("stdout", stdoutPipe)
-
-	wg.Add(1)
 	go readFromPipe("stderr", stderrPipe)
 
 	// Handle stdin input from user

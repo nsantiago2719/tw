@@ -54,7 +54,7 @@ func printOutput(output <-chan stdOutLine) {
 func handleStdin(stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
 	for range stdinRequestChan {
 		// Command is waiting for input
-		fmt.Print("\033[33mInput required: \033[0m") // Yellow prompt
+		fmt.Print("\n\033[33mInput required: \033[0m") // Yellow prompt
 
 		// Read user input
 		scanner := bufio.NewScanner(os.Stdin)
