@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
 )
 
@@ -55,17 +56,22 @@ func (cmd *cmd) addArg(arg string) *cmd {
 	return cmd
 }
 
-func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
+func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<- string, error) {
 	cmdCtx := exec.CommandContext(ctx, "terraform", cmd.Args...)
 
 	stdoutPipe, err := cmdCtx.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create stdoutpipe: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create stdoutpipe: %w", err)
 	}
 
 	stderrPipe, err := cmdCtx.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create stderrpipe: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create stderrpipe: %w", err)
+	}
+
+	stdinPipe, err := cmdCtx.StdinPipe()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to create stdinpipe: %w", err)
 	}
 
 	stdOutputChan := make(chan stdOutLine)
@@ -112,18 +118,31 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, error) {
 	go readFromPipe("stdout", stdoutPipe)
 	go readFromPipe("stderr", stderrPipe)
 
+	// Handle stdin input from user
+	go func() {
+		for input := range stdinInputChan {
+			_, err := io.WriteString(stdinPipe, input+"\n")
+			if err != nil {
+				fmt.Printf("error writing to stdin: %v\n", err)
+				break
+			}
+		}
+	}()
+
 	err = cmdCtx.Start()
 	if err != nil {
 		close(stdOutputChan)
-		return nil, fmt.Errorf("failed to run command: %w", err)
+		close(stdinRequestChan)
+		return nil, nil, nil, fmt.Errorf("failed to run command: %w", err)
 	}
 	go func() {
 		err = cmdCtx.Wait()
 		if err != nil {
-			fmt.Errorf("command finished with an error: %w", err)
+			fmt.Printf("command finished with an error: %v\n", err)
 		}
 		wg.Wait()
-		defer close(stdOutputChan)
+		close(stdOutputChan)
+		close(stdinRequestChan)
 	}()
 
 	return stdOutputChan, stdinRequestChan, stdinInputChan, nil

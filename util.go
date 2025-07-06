@@ -10,12 +10,13 @@ func runInit(ctx context.Context, resourcePath string) error {
 	execInit := initCmd("init")
 	execInit.createCmd(resourcePath)
 
-	execInitOutput, err := execInit.exec(ctx)
+	execInitOutput, stdinRequestChan, stdinInputChan, err := execInit.exec(ctx)
 	if err != nil {
 		return err
 	}
 
-	stdOutput(execInitOutput)
+	// Use handleCommandIO to process both output and stdin requests
+	handleCommandIO(execInitOutput, stdinRequestChan, stdinInputChan)
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -118,12 +119,17 @@ func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error
 		execApply.addArg("-dry-run")
 	}
 
-	execApplyOutput, err := execApply.exec(ctx)
+	// Get output channel and stdin channels from command execution
+	// The stdinRequestChan and stdinInputChan are used by handleCommandIO to manage interactive input
+	execApplyOutput, stdinRequestChan, stdinInputChan, err := execApply.exec(ctx)
 	if err != nil {
 		return err
 	}
 
-	stdOutput(execApplyOutput)
+	// Handle both output and potential input requests
+	// This function uses all three channels to manage command IO
+	handleCommandIO(execApplyOutput, stdinRequestChan, stdinInputChan)
+
 	return nil
 }
 
@@ -160,14 +166,18 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 		return err
 	}
 
-	execPlanOutput, err := execPlan.exec(ctx)
+	// Get output channel and stdin channels from command execution
+	// The stdinRequestChan and stdinInputChan are used by handleCommandIO to manage interactive input
+	execPlanOutput, stdinRequestChan, stdinInputChan, err := execPlan.exec(ctx)
 	if err != nil {
 		return err
 	}
 
-	stdOutput(execPlanOutput)
+	// Handle both output and potential input requests
+	// This function uses all three channels to manage command IO
+	handleCommandIO(execPlanOutput, stdinRequestChan, stdinInputChan)
 
-	return err
+	return nil
 }
 
 // TODO: set path as the current path if path flag is `.`
