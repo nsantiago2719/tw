@@ -19,6 +19,7 @@ func init() {
 	cliApp.addCommand(initCommand)
 	cliApp.addCommand(registerResource)
 	cliApp.addCommand(resources)
+	cliApp.addCommand(run)
 }
 
 func TestActionInit(t *testing.T) {
@@ -97,6 +98,13 @@ func TestActionResources(t *testing.T) {
 }
 
 func TestActionRunTerraform(t *testing.T) {
-	err := ""
-	assert.Nil(t, err)
+	cliApp.run(ctx, []string{"tw", "i"})
+	err := cliApp.run(ctx, []string{"tw", "r", "--name", "resource-name", "--path", "./data/resource-a", "--var-files", "first.tfvars", "--var-files", "second.tfvars"})
+	assert.NoError(t, err)
+
+	// always remove the config.json
+	defer os.Remove(cliApp.configPath)
+
+	err = cliApp.run(ctx, []string{"tw", "run", "resource-name", "-auto-approve"})
+	assert.NoError(t, err)
 }
