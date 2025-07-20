@@ -213,12 +213,16 @@ func Resources(_ context.Context, _ *cli.Command, cfg string) error {
 
 // Init create a config.json file if the file does not exist
 // else it would do nothing
-func Init(_ context.Context, _ *cli.Command, cfg string) error {
+func Init(_ context.Context, cmd *cli.Command, cfg string) error {
 	if _, err := os.Stat(cfg); errors.Is(err, os.ErrNotExist) {
 		err := os.WriteFile(cfg, []byte("[]"), 0o755)
 		if err != nil {
 			return err
 		}
+	}
+
+	if cmd.Bool("opentofu") {
+		fmt.Println("Set config to use opentofu")
 	}
 	fmt.Println("tw initialized: created config.json file")
 	return nil

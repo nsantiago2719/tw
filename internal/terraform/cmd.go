@@ -31,23 +31,23 @@ func InitCmd(command string) Cmd {
 func (cmd *Cmd) CreateCmd(path string, varFiles ...string) error {
 	chDir := fmt.Sprintf("-chdir=%v", path)
 	// inject the chdir flag
-	cmd.addArg(chDir)
+	cmd.AddArg(chDir)
 	// inject the command eg. plan or apply
-	cmd.addArg(cmd.Command)
+	cmd.AddArg(cmd.Command)
 	// inject no-color flag to remove ascii on the output
-	cmd.addArg("-no-color")
+	cmd.AddArg("-no-color")
 	// inject var-files
 	if len(varFiles) > 0 {
 		for _, v := range varFiles {
 			arg := fmt.Sprintf("-var-file=%v", v)
-			cmd.addArg(arg)
+			cmd.AddArg(arg)
 		}
 	}
 
 	return nil
 }
 
-func (cmd *Cmd) addArg(arg string) *Cmd {
+func (cmd *Cmd) AddArg(arg string) *Cmd {
 	cmd.Args = append(cmd.Args, arg)
 
 	return cmd

@@ -23,7 +23,17 @@ var (
 		Name:    "init",
 		Aliases: []string{"i"},
 		Usage:   "initializes the current working directory as the parent directory",
+<<<<<<< HEAD:cmd/commands/commands.go
 		Action:  actions.Init,
+=======
+		Action:  actionInit,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "opentofu",
+				Usage: "Use opentofu instead of terraform.",
+			},
+		},
+>>>>>>> 9e0188b (feat: added initial code for supporting opentofu instead of terraform):commands.go
 	}
 
 	registerResource = app.Command{
@@ -86,5 +96,26 @@ var (
 			},
 		},
 		Action: actions.PlanTerraform,
+	}
+
+	destroy = command{
+		Name:  "destroy",
+		Usage: "run terraform destroy against the resource values",
+		Arguments: []cli.Argument{
+			&cli.StringArg{
+				Name:      "resource-name",
+				UsageText: "[resource-name]",
+			},
+		},
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "auto-approve",
+				Usage: "sets terraform auto-accept flag",
+			},
+			&cli.BoolFlag{
+				Name:  "dry-run",
+				Usage: "sets the terraform dry-run flag",
+			},
+		},
 	}
 )
