@@ -1,91 +1,29 @@
-package main
+package actions
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v3"
+
+	"github.com/nsantiago2719/tw/internal/app"
+	"github.com/nsantiago2719/tw/internal/terraform"
+	"github.com/nsantiago2719/tw/pkg/utils"
 )
 
-type resource struct {
-	Name     string   `json:"name"`
-	Path     string   `json:"path"`
-	VarFiles []string `json:"var-files"`
-}
-
-// makeAction is a wrapper for injecting generic code for all actions
-// eg. logging
-func makeAction(f actionFunc, cfg string) cli.ActionFunc {
-	return func(ctx context.Context, cmd *cli.Command) error {
-		// sets the to default cfg if config flag is not passed
-		var cfgPath string
-		if cmd.String("config") == "" {
-			cfgPath = cfg
-		} else {
-			cfgPath = cmd.String("config")
-		}
-		if err := f(ctx, cmd, cfgPath); err != nil {
-			slog.Error("level=error", "msg", err)
-			return err
-		}
-		return nil
-	}
-}
-
-// printOutput is a local helper function to print command output with color formatting
-func printOutput(output <-chan stdOutLine) {
-	for line := range output {
-		if line.Stream == "stderr" {
-			fmt.Printf("\033[31m%s\033[0m\n", line.Msg)
-		} else {
-			fmt.Println(line.Msg)
-		}
-	}
-}
-
-// handleStdin manages user input when a command requires it
-func handleStdin(stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
-	for range stdinRequestChan {
-		// Command is waiting for input
-		fmt.Print("\n\033[33mInput required: \033[0m") // Yellow prompt
-
-		// Read user input
-		scanner := bufio.NewScanner(os.Stdin)
-		if scanner.Scan() {
-			userInput := scanner.Text()
-			// Send the input to the command
-			stdinInputChan <- userInput
-		} else {
-			// Handle scanner error
-			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", scanner.Err())
-			break
-		}
-	}
-}
-
-func handleCommandIO(output <-chan stdOutLine, stdinRequestChan <-chan bool, stdinInputChan chan<- string) {
-	// Start a goroutine to handle stdin requests
-	go handleStdin(stdinRequestChan, stdinInputChan)
-
-	// Process output in the current goroutine
-	printOutput(output)
-}
-
 // TODO: run terraform apply along with the var files passed if exist
-func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
+func RunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
 	resourceName := cmd.StringArg("resource-name")
 	if resourceName == "" {
 		return fmt.Errorf("resource-name cannot be empty")
 	}
 
-	var resources []resource
+	var resources []app.Resource
 	config, err := os.ReadFile(cfg)
 	if err != nil {
 		return err
@@ -96,51 +34,52 @@ func actionRunTerraform(ctx context.Context, cmd *cli.Command, cfg string) error
 		return err
 	}
 
-	resourcePath, args := getDetails(resourceName, resources)
+	resourcePath, args := utils.GetDetails(resourceName, resources)
 	if resourcePath == "" {
 		return fmt.Errorf("the resource registered has an empty path")
 	}
 
-	if err := runInit(ctx, resourcePath); err != nil {
+	if err := utils.RunInit(ctx, resourcePath); err != nil {
 		return err
 	}
 
-	execApply := initCmd("apply")
-	err = execApply.createCmd(resourcePath, args...)
+	execApply := terraform.InitCmd("apply")
+	err = execApply.CreateCmd(resourcePath, args...)
 	if err != nil {
 		return err
 	}
 
 	if cmd.Bool("auto-approve") {
-		execApply.addArg("-auto-approve")
+		execApply.AddArg("-auto-approve")
 	}
 
 	if cmd.Bool("dry-run") {
-		execApply.addArg("-dry-run")
+		execApply.AddArg("-dry-run")
 	}
 
 	// Get output channel and stdin channels from command execution
 	// The stdinRequestChan and stdinInputChan are used by handleCommandIO to manage interactive input
-	execApplyOutput, stdinRequestChan, stdinInputChan, err := execApply.exec(ctx)
+	execApplyOutput, stdinRequestChan, stdinInputChan, err := execApply.Exec(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Handle both output and potential input requests
 	// This function uses all three channels to manage command IO
-	handleCommandIO(execApplyOutput, stdinRequestChan, stdinInputChan)
+	utils.HandleCommandIO(execApplyOutput, stdinRequestChan, stdinInputChan)
 
 	return nil
 }
 
-func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
+// PlanTerraform runs terraform plan against the resource specified
+func PlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) error {
 	resourceName := cmd.StringArg("resource-name")
 
 	if resourceName == "" {
 		return fmt.Errorf("resouce-name cannot be empty")
 	}
 
-	var resources []resource
+	var resources []app.Resource
 	config, err := os.ReadFile(cfg)
 	if err != nil {
 		return err
@@ -151,37 +90,37 @@ func actionPlanTerraform(ctx context.Context, cmd *cli.Command, cfg string) erro
 		return err
 	}
 
-	resourcePath, varFiles := getDetails(resourceName, resources)
+	resourcePath, varFiles := utils.GetDetails(resourceName, resources)
 	if resourcePath == "" {
 		return fmt.Errorf("the resource registered has an empty path")
 	}
 
-	if err := runInit(ctx, resourcePath); err != nil {
+	if err := utils.RunInit(ctx, resourcePath); err != nil {
 		return err
 	}
 
-	execPlan := initCmd("plan")
-	err = execPlan.createCmd(resourcePath, varFiles...)
+	execPlan := terraform.InitCmd("plan")
+	err = execPlan.CreateCmd(resourcePath, varFiles...)
 	if err != nil {
 		return err
 	}
 
 	// Get output channel and stdin channels from command execution
 	// The stdinRequestChan and stdinInputChan are used by handleCommandIO to manage interactive input
-	execPlanOutput, stdinRequestChan, stdinInputChan, err := execPlan.exec(ctx)
+	execPlanOutput, stdinRequestChan, stdinInputChan, err := execPlan.Exec(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Handle both output and potential input requests
 	// This function uses all three channels to manage command IO
-	handleCommandIO(execPlanOutput, stdinRequestChan, stdinInputChan)
+	utils.HandleCommandIO(execPlanOutput, stdinRequestChan, stdinInputChan)
 
 	return nil
 }
 
 // TODO: set path as the current path if path flag is `.`
-func actionRegisterResource(_ context.Context, cmd *cli.Command, cfg string) error {
+func RegisterResource(_ context.Context, cmd *cli.Command, cfg string) error {
 	if cmd.String("name") == "" {
 		return errors.New("Name must not be empty")
 	}
@@ -190,20 +129,20 @@ func actionRegisterResource(_ context.Context, cmd *cli.Command, cfg string) err
 		return errors.New("Path must not be empty")
 	}
 
-	rs := resource{
+	rs := app.Resource{
 		Name:     cmd.String("name"),
 		Path:     cmd.String("path"),
 		VarFiles: cmd.StringSlice("var-files"),
 	}
 
-	file, err := os.OpenFile(cfg, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(cfg, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		return nil
 	}
 
 	defer file.Close()
 
-	resources := []resource{}
+	resources := []app.Resource{}
 
 	config, err := os.ReadFile(cfg)
 	if err != nil {
@@ -248,9 +187,10 @@ func actionRegisterResource(_ context.Context, cmd *cli.Command, cfg string) err
 	return nil
 }
 
-func actionResources(_ context.Context, _ *cli.Command, cfg string) error {
+// Resources lists all registered resources in a table format
+func Resources(_ context.Context, _ *cli.Command, cfg string) error {
 	config, err := os.ReadFile(cfg)
-	resources := []resource{}
+	resources := []app.Resource{}
 	if err != nil {
 		return err
 	}
@@ -271,11 +211,11 @@ func actionResources(_ context.Context, _ *cli.Command, cfg string) error {
 	return nil
 }
 
-// actionInit create a config.json file if the file does not exist
+// Init create a config.json file if the file does not exist
 // else it would do nothing
-func actionInit(_ context.Context, _ *cli.Command, cfg string) error {
+func Init(_ context.Context, _ *cli.Command, cfg string) error {
 	if _, err := os.Stat(cfg); errors.Is(err, os.ErrNotExist) {
-		err := os.WriteFile(cfg, []byte("[]"), 0755)
+		err := os.WriteFile(cfg, []byte("[]"), 0o755)
 		if err != nil {
 			return err
 		}

@@ -1,31 +1,13 @@
-package main
+package app
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/urfave/cli/v3"
 )
 
-type actionFunc func(context.Context, *cli.Command, string) error
-
-type app struct {
-	name       string
-	usage      string
-	configPath string
-	commands   []*cli.Command
-}
-
-type command struct {
-	Name        string
-	Aliases     []string
-	Usage       string
-	Action      actionFunc
-	Arguments   []cli.Argument
-	Flags       []cli.Flag
-	SubCommands []command
-}
-
-func newApp() app {
+func NewApp() app {
 	return app{
 		name:       "tw",
 		configPath: "config.json",
@@ -33,13 +15,17 @@ func newApp() app {
 	}
 }
 
-func (app *app) addCommand(cmd command) *app {
+func (app *app) ConfigPath() string {
+	return app.configPath
+}
+
+func (app *app) AddCommand(cmd Command) *app {
 	makeCmd := app.makeCommand(cmd)
 	app.commands = append(app.commands, &makeCmd)
 	return app
 }
 
-func (app *app) makeSubCommands(cmds []command) []*cli.Command {
+func (app *app) makeSubCommands(cmds []Command) []*cli.Command {
 	subCommands := []*cli.Command{}
 	for _, cmd := range cmds {
 		makeSubCommand := app.makeCommand(cmd)
@@ -49,7 +35,26 @@ func (app *app) makeSubCommands(cmds []command) []*cli.Command {
 	return subCommands
 }
 
-func (app *app) makeCommand(cmd command) cli.Command {
+// makeAction is a wrapper for injecting generic code for all actions
+// eg. logging
+func makeAction(f ActionFunc, cfg string) cli.ActionFunc {
+	return func(ctx context.Context, cmd *cli.Command) error {
+		// sets the to default cfg if config flag is not passed
+		var cfgPath string
+		if cmd.String("config") == "" {
+			cfgPath = cfg
+		} else {
+			cfgPath = cmd.String("config")
+		}
+		if err := f(ctx, cmd, cfgPath); err != nil {
+			slog.Error("level=error", "msg", err)
+			return err
+		}
+		return nil
+	}
+}
+
+func (app *app) makeCommand(cmd Command) cli.Command {
 	return cli.Command{
 		Name:      cmd.Name,
 		Aliases:   cmd.Aliases,
@@ -61,7 +66,7 @@ func (app *app) makeCommand(cmd command) cli.Command {
 	}
 }
 
-func (app *app) run(ctx context.Context, args []string) error {
+func (app *app) Run(ctx context.Context, args []string) error {
 	cliApp := &cli.Command{
 		Name:     app.name,
 		Usage:    app.usage,

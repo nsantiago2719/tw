@@ -1,4 +1,4 @@
-package main
+package terraform
 
 import (
 	"bufio"
@@ -8,55 +8,53 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+
+	"github.com/nsantiago2719/tw/internal/app"
 )
 
 // This contains all command instruction that will be passed to terraform
 // Command is reffered to the terraform command instead of the command
 // needed by the exec.CommandContext() function needs
 // Args are the arguements passed to the command eg.  apply, plan
-type cmd struct {
+type Cmd struct {
 	Command string
 	Args    []string
 }
 
-type stdOutLine struct {
-	Stream string
-	Msg    string
-}
-
-func initCmd(command string) cmd {
-	return cmd{
+func InitCmd(command string) Cmd {
+	return Cmd{
 		Command: command,
 		Args:    []string{},
 	}
 }
 
-func (cmd *cmd) createCmd(path string, varFiles ...string) error {
+// CreateCmd creates the terraform command with the necessary arguments
+func (cmd *Cmd) CreateCmd(path string, varFiles ...string) error {
 	chDir := fmt.Sprintf("-chdir=%v", path)
 	// inject the chdir flag
-	cmd.addArg(chDir)
+	cmd.AddArg(chDir)
 	// inject the command eg. plan or apply
-	cmd.addArg(cmd.Command)
+	cmd.AddArg(cmd.Command)
 	// inject no-color flag to remove ascii on the output
-	cmd.addArg("-no-color")
+	cmd.AddArg("-no-color")
 	// inject var-files
 	if len(varFiles) > 0 {
 		for _, v := range varFiles {
 			arg := fmt.Sprintf("-var-file=%v", v)
-			cmd.addArg(arg)
+			cmd.AddArg(arg)
 		}
 	}
 
 	return nil
 }
 
-func (cmd *cmd) addArg(arg string) *cmd {
+func (cmd *Cmd) AddArg(arg string) *Cmd {
 	cmd.Args = append(cmd.Args, arg)
 
 	return cmd
 }
 
-func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<- string, error) {
+func (cmd *Cmd) Exec(ctx context.Context) (<-chan app.StdOutLine, <-chan bool, chan<- string, error) {
 	cmdCtx := exec.CommandContext(ctx, "terraform", cmd.Args...)
 
 	stdoutPipe, err := cmdCtx.StdoutPipe()
@@ -74,7 +72,7 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 		return nil, nil, nil, fmt.Errorf("failed to create stdinpipe: %w", err)
 	}
 
-	stdOutputChan := make(chan stdOutLine)
+	stdOutputChan := make(chan app.StdOutLine)
 	stdinRequestChan := make(chan bool) // Signal when input is likely needed
 	stdinInputChan := make(chan string) // Channel to receive user input
 
@@ -95,7 +93,7 @@ func (cmd *cmd) exec(ctx context.Context) (<-chan stdOutLine, <-chan bool, chan<
 			// do not send empty lines
 			if line != "" {
 
-				stdOutputChan <- stdOutLine{Stream: pipeName, Msg: line}
+				stdOutputChan <- app.StdOutLine{Stream: pipeName, Msg: line}
 
 				// Check for common prompts that indicate the command is waiting for input
 				// This is a heuristic approach - adjust these patterns based on your specific use case
