@@ -12,15 +12,13 @@ import (
 	"github.com/nsantiago2719/tw/internal/app"
 )
 
-// This contains all command instruction that will be passed to terraform
-// Command is reffered to the terraform command instead of the command
-// needed by the exec.CommandContext() function needs
-// Args are the arguements passed to the command eg.  apply, plan
+// Cmd struct represents the terraform command and its arguments
 type Cmd struct {
 	Command string
 	Args    []string
 }
 
+// InitCmd initialize the Cmd struct
 func InitCmd(command string) Cmd {
 	return Cmd{
 		Command: command,
@@ -29,31 +27,34 @@ func InitCmd(command string) Cmd {
 }
 
 // CreateCmd creates the terraform command with the necessary arguments
+// TODO: add support for root directory
 func (cmd *Cmd) CreateCmd(path string, varFiles ...string) error {
 	chDir := fmt.Sprintf("-chdir=%v", path)
 	// inject the chdir flag
-	cmd.AddArg(chDir)
+	cmd.addArg(chDir)
 	// inject the command eg. plan or apply
-	cmd.AddArg(cmd.Command)
+	cmd.addArg(cmd.Command)
 	// inject no-color flag to remove ascii on the output
-	cmd.AddArg("-no-color")
+	cmd.addArg("-no-color")
 	// inject var-files
 	if len(varFiles) > 0 {
 		for _, v := range varFiles {
 			arg := fmt.Sprintf("-var-file=%v", v)
-			cmd.AddArg(arg)
+			cmd.addArg(arg)
 		}
 	}
 
 	return nil
 }
 
-func (cmd *Cmd) AddArg(arg string) *Cmd {
+func (cmd *Cmd) addArg(arg string) *Cmd {
 	cmd.Args = append(cmd.Args, arg)
 
 	return cmd
 }
 
+// Exec executes the terraform command
+// returns channels for stdout, stdin requests, and stdin input
 func (cmd *Cmd) Exec(ctx context.Context) (<-chan app.StdOutLine, <-chan bool, chan<- string, error) {
 	cmdCtx := exec.CommandContext(ctx, "terraform", cmd.Args...)
 
