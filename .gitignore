@@ -6,3 +6,4 @@ bin/*
 *.tfstate
 /**/*.txt
 /**/*.tfstate.backup
+config.json
