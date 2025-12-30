@@ -3,18 +3,30 @@ package commands
 import (
 	"github.com/nsantiago2719/tw/internal/actions"
 	"github.com/nsantiago2719/tw/internal/app"
+
 	"github.com/urfave/cli/v3"
 )
 
+type commands []*app.Command
+
+// AllCommands is the list of all available commands
+var AllCommands = commands{
+	&initCommand,
+	&registerResource,
+	&resources,
+	&run,
+	&plan,
+}
+
 var (
-	InitCommand = app.Command{
+	initCommand = app.Command{
 		Name:    "init",
 		Aliases: []string{"i"},
 		Usage:   "initializes the current working directory as the parent directory",
 		Action:  actions.Init,
 	}
 
-	RegisterResource = app.Command{
+	registerResource = app.Command{
 		Name:    "register",
 		Aliases: []string{"r"},
 		Usage:   "registers a resource to the config file",
@@ -35,14 +47,14 @@ var (
 		},
 	}
 
-	Resources = app.Command{
+	resources = app.Command{
 		Name:    "list-resources",
 		Aliases: []string{"lr"},
 		Usage:   "list all resources",
 		Action:  actions.Resources,
 	}
 
-	Run = app.Command{
+	run = app.Command{
 		Name:  "run",
 		Usage: "runs terraform apply against the resource values",
 		Arguments: []cli.Argument{
@@ -64,7 +76,7 @@ var (
 		Action: actions.RunTerraform,
 	}
 
-	Plan = app.Command{
+	plan = app.Command{
 		Name:  "plan",
 		Usage: "run terraform plan against the resource values",
 		Arguments: []cli.Argument{
