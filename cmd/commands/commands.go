@@ -23,17 +23,13 @@ var (
 		Name:    "init",
 		Aliases: []string{"i"},
 		Usage:   "initializes the current working directory as the parent directory",
-<<<<<<< HEAD:cmd/commands/commands.go
 		Action:  actions.Init,
-=======
-		Action:  actionInit,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "opentofu",
 				Usage: "Use opentofu instead of terraform.",
 			},
 		},
->>>>>>> 9e0188b (feat: added initial code for supporting opentofu instead of terraform):commands.go
 	}
 
 	registerResource = app.Command{
@@ -98,7 +94,7 @@ var (
 		Action: actions.PlanTerraform,
 	}
 
-	destroy = command{
+	destroy = app.Command{
 		Name:  "destroy",
 		Usage: "run terraform destroy against the resource values",
 		Arguments: []cli.Argument{
@@ -119,3 +115,5 @@ var (
 		},
 	}
 )
+func tst(){
+}

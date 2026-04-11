@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nsantiago2719/tw/cmd/commands"
 	"github.com/nsantiago2719/tw/internal/app"
-	"github.com/nsantiago2719/tw/internal/commands"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,10 +18,9 @@ var (
 )
 
 func init() {
-	cliApp.AddCommand(commands.InitCommand)
-	cliApp.AddCommand(commands.RegisterResource)
-	cliApp.AddCommand(commands.Resources)
-	cliApp.AddCommand(commands.Run)
+	for _, cmd := range commands.AllCommands {
+		cliApp.AddCommand(*cmd)
+	}
 }
 
 func TestActionInit(t *testing.T) {
